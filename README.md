@@ -3,6 +3,8 @@
 
 ## Introduction
 
+This custom container derived from the original rover work from Microsoft implement a requirement to provide a yes/no on apply. This is to prevent disastrous application of changes that are not expected.
+
 To build SSC image:
 
 ```bash
