@@ -224,8 +224,8 @@ function initialize_state {
             plan
             ;;
         "apply")
-            echo "calling plan and apply"
-            plan
+            echo "calling apply"
+            # plan
             apply
             # Create sandpit workspace
             get_storage_id
@@ -513,6 +513,38 @@ function plan {
 function apply {
     echo "@calling apply"
 
+    echo "running terraform apply with ${tf_command}"
+    echo " -TF_VAR_workspace: ${TF_VAR_workspace}"
+    echo " -state: ${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_name}"
+
+    pwd
+
+    mkdir -p "${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}"
+
+    rm -f $STDERR_FILE
+
+    terraform apply ${tf_command} \
+            -state="${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_name}" \
+            $PWD 2>$STDERR_FILE | tee ${tf_output_file}
+
+    RETURN_CODE=$? && echo "Terraform apply return code: ${RETURN_CODE}"
+
+    if [ -s $STDERR_FILE ]; then
+        if [ ${tf_output_file+x} ]; then cat $STDERR_FILE >> ${tf_output_file}; fi
+        echo "Terraform returned errors:"
+        cat $STDERR_FILE
+        RETURN_CODE=2001
+    fi
+
+    if [ $RETURN_CODE != 0 ]; then
+        error ${LINENO} "Error running terraform apply" $RETURN_CODE
+    fi
+    
+}
+
+function autoapply {
+    echo "@calling apply"
+
     echo 'running terraform apply'
     rm -f $STDERR_FILE
 
@@ -723,8 +755,8 @@ function deploy_landingzone {
             plan
             ;;
         "apply")
-            echo "calling plan and apply"
-            plan
+            echo "calling apply"
+            # plan
             apply
             ;;
         "validate")
