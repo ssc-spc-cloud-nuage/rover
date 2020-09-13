@@ -57,55 +57,6 @@ RUN cd /tmp && \
 ###########################################################
 # tools
 ###########################################################
-FROM base as tools
-# [Option] Upgrade OS packages to their latest versions
-ARG UPGRADE_PACKAGES="false"
-# [Option] Install Docker CLI
-ARG INSTALL_DOCKER="true"
-# [Option] Enable non-root Docker access in container
-ARG ENABLE_NONROOT_DOCKER="true"
-# [Option] Install Azure CLI
-ARG INSTALL_AZURE_CLI="true"
-# Arguments set during docker-compose build -b --build from .env file
-ARG versionTerraform
-ARG versionAzureCli
-ARG versionKubectl
-ARG versionTflint
-ARG versionJq
-ARG versionDockerCompose
-ARG versionTfsec
-
-# Install needed packages and setup non-root user. Use a separate RUN statement to add your own dependencies.
-ARG USERNAME=vscode
-ARG USER_UID=1000
-ARG USER_GID=$USER_UID
-ARG SOURCE_SOCKET=/var/run/docker-host.sock
-ARG TARGET_SOCKET=/var/run/docker.sock
-COPY library-scripts/*.sh /tmp/library-scripts/
-
-RUN apt-get update \
-    # Terraform, tflint
-    && bash /tmp/library-scripts/terraform-debian.sh "${versionTerraform}" "${versionTflint}" \
-    # Clean up
-    && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts/
-
-# Install kubectl
-RUN curl -sSL -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl \
-    && chmod +x /usr/local/bin/kubectl
-
-# Install Helm
-RUN curl -s https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash -
-
-#
-# Install jq
-#
-RUN echo "Installing jq ${versionJq}..." && \
-    curl -L -o /usr/bin/jq https://github.com/stedolan/jq/releases/download/jq-${versionJq}/jq-linux64 && \
-    chmod +x /usr/bin/jq
-
-###########################################################
-# CAF Rover
-###########################################################
 FROM base
 # [Option] Upgrade OS packages to their latest versions
 ARG UPGRADE_PACKAGES="false"
@@ -134,13 +85,30 @@ COPY library-scripts/*.sh /tmp/library-scripts/
 
 RUN apt-get update \
     && /bin/bash /tmp/library-scripts/common-debian.sh "${INSTALL_ZSH}" "${USERNAME}" "${USER_UID}" "${USER_GID}" "${UPGRADE_PACKAGES}" \
-    && apt install -y gnupg2 pass make docker-compose \
     # Use Docker script from script library to set things up
     && if [ "${INSTALL_DOCKER}" = "true" ]; then /bin/bash /tmp/library-scripts/docker-debian.sh "${ENABLE_NONROOT_DOCKER}" "${SOURCE_SOCKET}" "${TARGET_SOCKET}" "${USERNAME}"; fi \
+    # Docker compose
+    && apt install -y docker-compose \
     # Use azcli
     && if [ "${INSTALL_AZURE_CLI}" = "true" ]; then bash /tmp/library-scripts/azcli-debian.sh; fi \
+    # Terraform, tflint
+    && bash /tmp/library-scripts/terraform-debian.sh "${versionTerraform}" "${versionTflint}" \
     # Clean up
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts/
+
+# Install kubectl
+RUN curl -sSL -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl \
+    && chmod +x /usr/local/bin/kubectl
+
+# Install Helm
+RUN curl -s https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash -
+
+#
+# Install jq
+#
+RUN echo "Installing jq ${versionJq}..." && \
+    curl -L -o /usr/bin/jq https://github.com/stedolan/jq/releases/download/jq-${versionJq}/jq-linux64 && \
+    chmod +x /usr/bin/jq
 
 ARG SSH_PASSWD
 
@@ -159,12 +127,6 @@ COPY --from=azurecaf /tmp/terraform-provider-azurecaf/terraform-provider-azureca
 COPY --from=msgraph /tmp/terraform-provider-msgraph/terraform-provider-msgraph /bin/
 COPY --from=tfsec /go/bin/tfsec /bin/
 COPY --from=terraform-docs /go/bin/terraform-docs /bin/
-# Add tools
-COPY --from=tools /usr/local/bin/terraform /usr/local/bin/terraform
-COPY --from=tools /usr/local/bin/kubectl /usr/local/bin/kubectl
-COPY --from=tools /usr/local/bin/helm /usr/local/bin/helm
-COPY --from=tools /usr/bin/jq /usr/bin/jq
-COPY --from=tools /usr/local/bin/tflint /usr/local/bin/tflint
 
 WORKDIR /tf/rover
 
