@@ -15,25 +15,30 @@ RUN echo ${versionRover} > version.txt
 FROM centos:7 as base
 
 RUN yum makecache fast && \
+    yum -y update && \
+    yum -y install https://packages.endpoint.com/rhel/7/os/x86_64/endpoint-repo-1.7-1.x86_64.rpm && \
     yum -y install \
-        libtirpc \
-        python3 \
-        python3-libs \
-        python3-pip \
-        python3-setuptools \
-        unzip \
-        bzip2 \
-        make \
-        openssh-clients \
-        openssl \
-        man \
-        ansible \
-        openssh-server \
-        which \
-        tmux \
-        sudo && \
-    yum -y update
-
+            git \
+            libtirpc \
+            python3 \
+            python3-libs \
+            python3-pip \
+            python3-setuptools \
+            unzip \
+            bzip2 \
+            make \
+            openssh-clients \
+            openssl \
+            man \
+            ansible \
+            openssh-server \
+            which \
+            tmux \
+            sudo \
+            wget \
+            libicu && \
+    yum clean all && \
+    rm -rf /var/cache/yum
 
 ###########################################################
 # Getting latest version of terraform-docs
@@ -81,33 +86,6 @@ RUN cd /tmp && \
     go build -o terraform-provider-msgraph
 
 ###########################################################
-# git
-###########################################################
-FROM base as git
-
-# Arguments set during docker-compose build -b --build from .env file
-ARG versionGit
-     
-RUN yum -y install \
-        make \
-        zlib-devel \
-        curl-devel \ 
-        gettext \
-        bzip2 \
-        gcc \
-        unzip && \
-    #
-    # Install git from source code
-    #
-    echo "Installing git ${versionGit}..." && \
-    curl -sSL -o /tmp/git.tar.gz https://www.kernel.org/pub/software/scm/git/git-${versionGit}.tar.gz && \
-    tar xvf /tmp/git.tar.gz -C /tmp && \
-    cd /tmp/git-${versionGit} && \
-    ./configure --exec-prefix="/usr" && \
-    make -j && \
-    make install
-
-###########################################################
 # tools
 ###########################################################
 FROM base as tools
@@ -141,19 +119,6 @@ RUN yum-config-manager --add-repo https://download.docker.com/linux/centos/docke
     echo "Installing docker-compose ${versionDockerCompose}..." && \
     curl -L -o /usr/bin/docker-compose "https://github.com/docker/compose/releases/download/${versionDockerCompose}/docker-compose-Linux-x86_64" && \
     chmod +x /usr/bin/docker-compose && \
-    #
-    # Install Azure-cli
-    #
-    echo "Installing azure-cli ${versionAzureCli}..." && \
-    rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
-    sh -c 'echo -e "[azure-cli] \n\
-name=Azure CLI \n\
-baseurl=https://packages.microsoft.com/yumrepos/azure-cli \n\
-enabled=1 \n\
-gpgcheck=1 \n\
-gpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/azure-cli.repo' && \
-    cat /etc/yum.repos.d/azure-cli.repo && \
-    yum -y install azure-cli-${versionAzureCli} && \
     #
     # Install kubectl
     #
@@ -211,7 +176,26 @@ ENV SSH_PASSWD=${SSH_PASSWD} \
     TF_DATA_DIR="/home/${USERNAME}/.terraform.cache" \
     TF_PLUGIN_CACHE_DIR="/home/${USERNAME}/.terraform.cache/plugin-cache"
 
-RUN touch /var/run/docker.sock && \
+    #
+    # Install Azure-cli
+    #
+RUN echo "Installing azure-cli ${versionAzureCli}..." && \
+    rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
+    sh -c 'echo -e "[azure-cli] \n\
+name=Azure CLI \n\
+baseurl=https://packages.microsoft.com/yumrepos/azure-cli \n\
+enabled=1 \n\
+gpgcheck=1 \n\
+gpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/azure-cli.repo' && \
+    cat /etc/yum.repos.d/azure-cli.repo && \
+    yum -y update && \
+    yum -y install azure-cli-${versionAzureCli} && \
+    yum clean all && \
+    rm -rf /var/cache/yum && \
+    #
+    # Docker sock
+    #
+    touch /var/run/docker.sock && \
     chmod 666 /var/run/docker.sock && \
     #
     # Install pre-commit
@@ -240,11 +224,9 @@ COPY --from=tfsec /go/bin/tfsec /bin/
 COPY --from=terraform-docs /go/bin/terraform-docs /bin/
 
 # Add tools
-COPY --from=git /usr/bin/git /usr/bin/git
 COPY --from=tools /usr/bin/docker /usr/bin/docker
 COPY --from=tools /usr/bin/terraform /usr/bin/terraform
 COPY --from=tools /usr/bin/docker-compose /usr/bin/docker-compose
-COPY --from=tools /usr/bin/az /usr/bin/az
 COPY --from=tools /usr/bin/kubectl /usr/bin/kubectl
 COPY --from=tools /usr/local/bin/helm /usr/bin/helm
 COPY --from=tools /usr/bin/jq /usr/bin/jq
@@ -261,6 +243,8 @@ COPY --from=rover_version version.txt /tf/rover/version.txt
 
 RUN echo "alias rover=/tf/rover/rover.sh" >> /home/${USERNAME}/.bashrc && \
     echo "alias t=/usr/bin/terraform" >> /home/${USERNAME}/.bashrc && \
+    echo "alias rover=/tf/rover/rover.sh" >> /root/.bashrc && \
+    echo "alias t=/usr/bin/terraform" >> /root/.bashrc && \
     mkdir -p /tf/caf && \
     chown -R ${USERNAME}:1000 /tf/rover /tf/caf /home/${USERNAME}/.ssh && \
     chmod +x /tf/rover/sshd.sh
