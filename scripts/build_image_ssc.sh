@@ -15,15 +15,14 @@ case "$1" in
         ;;
     *)
         tag=$(date +"%g%m.%d%H%M")
-        rover="sscspccloudnuage/rover:${tag}"
+        rover="sscspccloudnuage/roverdev:${tag}"
         ;;
 esac
 
 echo "Creating version ${rover}"
 
 # Build the rover base image
-sudo docker-compose build --build-arg versionRover=${rover}
-
+docker-compose build --build-arg versionRover=${rover}
 
 case "$1" in 
     "github")
@@ -46,10 +45,10 @@ case "$1" in
         echo "Version sscspccloudnuage/roverdev:latest created."
         ;;
     *)    
-        docker tag rover_rover sscspccloudnuage/rover:$tag
-        docker tag rover_rover sscspccloudnuage/rover:latest
+        docker tag rover_rover sscspccloudnuage/roverdev:${tag}
+        docker tag rover_rover sscspccloudnuage/roverdev:latest
         echo "Local version created"
-        echo "Version sscspccloudnuage/rover:${tag} created."
+        echo "Version sscspccloudnuage/roverdev:${tag} created."
         echo "Version sscspccloudnuage/roverdev:latest created."
         ;;
 esac
