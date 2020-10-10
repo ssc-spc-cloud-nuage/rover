@@ -13,19 +13,20 @@ RUN echo ${versionRover} > version.txt
 # Getting latest version of terraform-docs
 ###########################################################
 FROM golang:1.13 as terraform-docs
-
 ARG versionTerraformDocs
 ENV versionTerraformDocs=${versionTerraformDocs}
 
-RUN GO111MODULE="on" go get github.com/segmentio/terraform-docs@${versionTerraformDocs}
+RUN GO111MODULE="on" go get github.com/terraform-docs/terraform-docs@${versionTerraformDocs}
 
 ###########################################################
 # Getting latest version of tfsec
 ###########################################################
 FROM golang:1.13 as tfsec
+ARG versionTfsec
+ENV versionTfsec=${versionTfsec}
 
 # to force the docker cache to invalidate when there is a new version
-RUN env GO111MODULE=on go get -u github.com/liamg/tfsec/cmd/tfsec
+RUN GO111MODULE="on" go get github.com/tfsec/tfsec/cmd/tfsec@${versionTfsec}
 
 ###########################################################
 # Getting latest version of Azure CAF Terraform provider
@@ -68,11 +69,11 @@ ARG ENABLE_NONROOT_DOCKER="true"
 ARG INSTALL_AZURE_CLI="true"
 # Arguments set during docker-compose build -b --build from .env file
 ARG versionTerraform
-ARG versionAzureCli
-ARG versionKubectl
+# ARG versionAzureCli
+# ARG versionKubectl
 ARG versionTflint
 ARG versionJq
-ARG versionDockerCompose
+# ARG versionDockerCompose
 ARG versionTfsec
 
 # Install needed packages and setup non-root user. Use a separate RUN statement to add your own dependencies.
