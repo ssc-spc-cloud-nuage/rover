@@ -150,7 +150,7 @@ RUN echo "alias rover=/tf/rover/rover.sh" >> /home/${USERNAME}/.bashrc && \
     chmod +x /tf/rover/sshd.sh
 
 USER ${USERNAME}
-WORKDIR /tf/caf
+# WORKDIR /tf/caf
 
 # Setting the ENTRYPOINT to docker-init.sh will configure non-root access to 
 # the Docker socket if "overrideCommand": false is set in devcontainer.json. 
