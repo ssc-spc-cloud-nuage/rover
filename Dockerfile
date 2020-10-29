@@ -93,14 +93,8 @@ RUN apt-get update \
 
 COPY library-scripts/*.sh /tmp/library-scripts/
 
-RUN apt-get update \
-    && /bin/bash /tmp/library-scripts/common-debian.sh "${INSTALL_ZSH}" "${USERNAME}" "${USER_UID}" "${USER_GID}" "${UPGRADE_PACKAGES}" \
-    # Use Docker script from script library to set things up
-    && if [ "${INSTALL_DOCKER}" = "true" ]; then /bin/bash /tmp/library-scripts/docker-debian.sh "${ENABLE_NONROOT_DOCKER}" "${SOURCE_SOCKET}" "${TARGET_SOCKET}" "${USERNAME}"; fi \
-    # Docker compose
-    && apt install -y docker-compose gnupg2 pass make \
-    # Terraform, tflint
-    && bash /tmp/library-scripts/terraform-debian.sh "0.13.5" "${versionTflint}" \
+# Terraform, tflint
+RUN bash /tmp/library-scripts/terraform-debian.sh "${versionTerraform}" "${versionTflint}" \
     # Clean up
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts/
 
@@ -161,5 +155,5 @@ WORKDIR /tf/caf
 # Setting the ENTRYPOINT to docker-init.sh will configure non-root access to 
 # the Docker socket if "overrideCommand": false is set in devcontainer.json. 
 # The script will also execute CMD if you need to alter startup behaviors.
-ENTRYPOINT [ "/usr/local/share/docker-init.sh" ]
+# ENTRYPOINT [ "/usr/local/share/docker-init.sh" ]
 CMD [ "sleep", "infinity" ]
