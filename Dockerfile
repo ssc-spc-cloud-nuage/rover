@@ -84,16 +84,23 @@ ARG SOURCE_SOCKET=/var/run/docker-host.sock
 ARG TARGET_SOCKET=/var/run/docker.sock
 COPY library-scripts/*.sh /tmp/library-scripts/
 
+# Install Azure CLI
+RUN apt-get update \
+    # Use azcli
+    && if [ "${INSTALL_AZURE_CLI}" = "true" ]; then bash /tmp/library-scripts/azcli-debian.sh; fi \
+    # Clean up
+    && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts/
+
+COPY library-scripts/*.sh /tmp/library-scripts/
+
 RUN apt-get update \
     && /bin/bash /tmp/library-scripts/common-debian.sh "${INSTALL_ZSH}" "${USERNAME}" "${USER_UID}" "${USER_GID}" "${UPGRADE_PACKAGES}" \
     # Use Docker script from script library to set things up
     && if [ "${INSTALL_DOCKER}" = "true" ]; then /bin/bash /tmp/library-scripts/docker-debian.sh "${ENABLE_NONROOT_DOCKER}" "${SOURCE_SOCKET}" "${TARGET_SOCKET}" "${USERNAME}"; fi \
     # Docker compose
     && apt install -y docker-compose gnupg2 pass make \
-    # Use azcli
-    && if [ "${INSTALL_AZURE_CLI}" = "true" ]; then bash /tmp/library-scripts/azcli-debian.sh; fi \
     # Terraform, tflint
-    && bash /tmp/library-scripts/terraform-debian.sh "${versionTerraform}" "${versionTflint}" \
+    && bash /tmp/library-scripts/terraform-debian.sh "0.13.5" "${versionTflint}" \
     # Clean up
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts/
 

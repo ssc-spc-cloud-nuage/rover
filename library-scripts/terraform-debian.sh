@@ -31,14 +31,14 @@ if ! dpkg -s curl ca-certificates unzip > /dev/null 2>&1; then
 fi
 
 # Install Terraform, tflint
-echo "Downloading terraform..."
+echo "Downloading terraform ${TERRAFORM_VERSION}..."
 mkdir -p /tmp/tf-downloads
 curl -sSL -o /tmp/tf-downloads/terraform.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
 unzip /tmp/tf-downloads/terraform.zip
 mv -f terraform /usr/local/bin/
 
 if [ "${TFLINT_VERSION}" != "none" ]; then
-    echo "Downloading tflint..."
+    echo "Downloading tflint ${TFLINT_VERSION}..."
     curl -sSL -o /tmp/tf-downloads/tflint.zip https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip
     unzip /tmp/tf-downloads/tflint.zip
     mv -f tflint /usr/local/bin/
