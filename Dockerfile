@@ -132,16 +132,22 @@ COPY --from=terraform-docs /go/bin/terraform-docs /bin/
 
 WORKDIR /tf/rover
 
-COPY ./scripts/rover.sh .
-COPY ./scripts/functions.sh .
-COPY ./scripts/banner.sh .
-COPY ./scripts/clone.sh .
-COPY ./scripts/sshd.sh .
+COPY ./scripts-rover/* ./
+# COPY ./scripts/functions.sh .
+# COPY ./scripts/banner.sh .
+# COPY ./scripts/clone.sh .
+# COPY ./scripts/sshd.sh .
 COPY --from=rover_version version.txt /version.txt
 
 RUN echo "alias rover=/tf/rover/rover.sh" >> /home/${USERNAME}/.bashrc && \
-    echo "alias t=/usr/bin/terraform" >> /home/${USERNAME}/.bashrc && \
     echo "alias rover=/tf/rover/rover.sh" >> /root/.bashrc && \
+    echo "alias gorover=/tf/rover/gorover.sh" >> /home/${USERNAME}/.bashrc && \
+    echo "alias gorover=/tf/rover/gorover.sh" >> /root/.bashrc && \
+    echo "alias goterraform=/tf/rover/goterraform.sh" >> /home/${USERNAME}/.bashrc && \
+    echo "alias goterraform=/tf/rover/goterraform.sh" >> /root/.bashrc && \
+    echo "alias runactions=/tf/rover/runactions.sh" >> /home/${USERNAME}/.bashrc && \
+    echo "alias runactions=/tf/rover/runactions.sh" >> /root/.bashrc && \
+    echo "alias t=/usr/bin/terraform" >> /home/${USERNAME}/.bashrc && \
     echo "alias t=/usr/bin/terraform" >> /root/.bashrc && \
     # mkdir -p /tf && \
     # mkdir -p /tf/caf && \
