@@ -50,7 +50,7 @@ fi
 if [ "${proceed,,}" = "yes" ];
 then
   mkdir -p .actions
-  echo "/tf/rover/gorover.sh ${env} plan" >> .actions/cicdrun.sh
+  echo "/tf/rover/gorover.sh ${env} plan" > .actions/cicdrun.sh
   echo "/tf/rover/gorover.sh $@ -auto-approve" >> .actions/cicdrun.sh
   chmod +x .actions/cicdrun.sh
   git add .
