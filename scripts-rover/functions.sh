@@ -567,6 +567,37 @@ function autoapply {
     
 }
 
+function import {
+    echo "@calling import"
+
+    echo "running terraform import with ${tf_command}"
+    echo " -TF_VAR_workspace: ${TF_VAR_workspace}"
+    echo " -state: ${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_name}"
+
+    pwd
+
+    mkdir -p "${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}"
+
+    rm -f $STDERR_FILE
+
+    terraform import -state="${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_name}" \
+            ${tf_command}
+
+    RETURN_CODE=$? && echo "Terraform apply return code: ${RETURN_CODE}"
+
+    if [ -s $STDERR_FILE ]; then
+        if [ ${tf_output_file+x} ]; then cat $STDERR_FILE >> ${tf_output_file}; fi
+        echo "Terraform returned errors:"
+        cat $STDERR_FILE
+        RETURN_CODE=2001
+    fi
+
+    if [ $RETURN_CODE != 0 ]; then
+        error ${LINENO} "Error running terraform apply" $RETURN_CODE
+    fi
+    
+}
+
 function validate {
     echo "@calling validate"
 
@@ -758,6 +789,11 @@ function deploy_landingzone {
             echo "calling apply"
             # plan
             apply
+            ;;
+        "import")
+            echo "calling import"
+            # plan
+            import
             ;;
         "validate")
             echo "calling validate"
