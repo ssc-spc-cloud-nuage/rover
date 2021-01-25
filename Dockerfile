@@ -12,7 +12,7 @@ RUN echo ${versionRover} > version.txt
 ###########################################################
 # Getting latest version of terraform-docs
 ###########################################################
-FROM golang:1.13 as terraform-docs
+FROM golang:1.15.6 as terraform-docs
 ARG versionTerraformDocs
 ENV versionTerraformDocs=${versionTerraformDocs}
 
@@ -21,7 +21,7 @@ RUN GO111MODULE="on" go get github.com/terraform-docs/terraform-docs@${versionTe
 ###########################################################
 # Getting latest version of tfsec
 ###########################################################
-FROM golang:1.13 as tfsec
+FROM golang:1.15.6 as tfsec
 ARG versionTfsec
 ENV versionTfsec=${versionTfsec}
 
@@ -31,7 +31,7 @@ RUN GO111MODULE="on" go get github.com/tfsec/tfsec/cmd/tfsec@${versionTfsec}
 ###########################################################
 # Getting latest version of Azure CAF Terraform provider
 ###########################################################
-FROM golang:1.13 as azurecaf
+FROM golang:1.15.6 as azurecaf
 
 ARG versionAzureCafTerraform
 ENV versionAzureCafTerraform=${versionAzureCafTerraform}
@@ -46,7 +46,7 @@ RUN cd /tmp && \
 ###########################################################
 # Getting latest version of yaegashi/terraform-provider-msgraph
 ###########################################################
-FROM golang:1.13 as msgraph
+FROM golang:1.15.6 as msgraph
 
 # to force the docker cache to invalidate when there is a new version
 ADD https://api.github.com/repos/aztfmod/terraform-provider-azurecaf/git/ref/heads/master version.json
