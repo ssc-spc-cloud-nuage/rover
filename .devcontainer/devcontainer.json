@@ -1,39 +1,32 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.155.1/containers/docker-from-docker-compose
 {
-    "name": "Azure CAF rover",
- 
-    // Update the 'dockerComposeFile' list if you have more compose files or use different names.
-    "dockerComposeFile": "docker-compose.yml",
- 
-    // The 'service' property is the name of the service for the container that VS Code should
-    // use. Update this value and .devcontainer/docker-compose.yml to the real service name.
-    "service": "rover",
- 
-    // The optional 'workspaceFolder' property is the path VS Code should open by default when
-    // connected. This is typically a volume mount in .devcontainer/docker-compose.yml
-    "workspaceFolder": "/tf/rover",
- 
-    // Use 'settings' to set *default* container specific settings.json values on container create. 
-    // You can edit these settings after create using File > Preferences > Settings > Remote.
-    "settings": { 
-        "files.eol": "\n",
-        "terminal.integrated.shell.linux": "/bin/bash",
-        "editor.tabSize": 2,
-        "terminal.integrated.scrollback": 2000,
-    },
- 
-    // Uncomment the next line if you want start specific services in your Docker Compose config.
-    // "runServices": [],
- 
-    // Uncomment this like if you want to keep your containers running after VS Code shuts down.
-    // "shutdownAction": "none",
- 
-    // Uncomment the next line to run commands after the container is created.
-    "postCreateCommand": "cp -R /tmp/.ssh-localhost/* ~/.ssh && chmod 700 ~/.ssh && chmod 600 ~/.ssh/*",
- 
-    // Add the IDs of extensions you want installed when the container is created in the array below.
-    "extensions": [
-        "4ops.terraform",
-        "mutantdino.resourcemonitor",
-        "eamodio.gitlens"
-    ]
+	"name": "Docker from Docker Compose",
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "app",
+	"workspaceFolder": "/workspace",
+
+	// Use this environment variable if you need to bind mount your local source code into a new container.
+	"remoteEnv": {
+		"LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}"
+	},
+	
+	// Set *default* container specific settings.json values on container create.
+	"settings": { 
+		"terminal.integrated.shell.linux": "/bin/bash"
+	},
+
+	// Add the IDs of extensions you want installed when the container is created.
+	"extensions": [
+		"ms-azuretools.vscode-docker"
+	],
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "docker --version",
+
+	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+	"remoteUser": "vscode"
 }
