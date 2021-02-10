@@ -8,7 +8,7 @@ date=`date +%Y%m%d%H%M%S`
 
 if [[ -z ${env} || -z ${command} ]]; then
   echo 'one or more script variables are undefined'
-  echo "expecting: ./gorover.sh <environment name> <plan|apply|destroy|validate>"
+  echo "expecting: ./gorover.sh <environment name> <plan|apply|destroy|import|validate>"
   echo ""
   exit 1
 fi
@@ -26,10 +26,10 @@ if [[ ${#1} -lt 3 ]]; then
 fi
 
 case "${command}" in
-  plan|apply|destroy|validate)
+  plan|apply|destroy|import|validate)
     ;;
   *)
-    echo "Accepted command is one of: plan, apply, destroy or validate"
+    echo "Accepted command is one of: plan, apply, destroy, import or validate"
     echo ""
     exit 1
     ;;
@@ -64,24 +64,10 @@ if [[ ! -f "/tf/caf/${blueprint}/environments/${env}.tfvars" ]]; then
   exit 1
 fi
 
-# Taking backup of statefile before applying if cache already exist
-
-if [[ ${command} == "apply" ]]; then
-  if [[ -d ${TF_DATA_DIR} ]]; then
-    current=${PWD}
-    cd code
-    echo "Taking backup of state file"
-    terraform state pull > ${TF_DATA_DIR}/terraform.state.${date}
-    cd ${current}
-  else
-    echo "cache does not yet exist, can't take backup."
-  fi
-fi
-
 shift # Remove 1st argument from the list (environment name)
 
 if [[ ${blueprint} == "L0_blueprint_launchpad" ]]; then
-  /tf/rover/rover.sh -lz /tf/caf/${blueprint}/code -a $@ -launchpad -env ${env} -tfstate "${blueprint}_${env}.tfstate" -parallelism=30 -var-file="/tf/caf/${blueprint}/environments/${env}.tfvars"
+  /tf/rover/rover.sh -lz /tf/caf/${blueprint}/code -launchpad -env ${env} -tfstate "${blueprint}_${env}.tfstate" -parallelism=80 -var-file="/tf/caf/${blueprint}/environments/${env}.tfvars" -a $@ 
 else
-  /tf/rover/rover.sh -lz /tf/caf/${blueprint}/code -a $@ -env ${env} -tfstate "${blueprint}_${env}.tfstate" -parallelism=30 -var-file="/tf/caf/${blueprint}/environments/${env}.tfvars"
+  /tf/rover/rover.sh -lz /tf/caf/${blueprint}/code -env ${env} -tfstate "${blueprint}_${env}.tfstate" -parallelism=80 -var-file="/tf/caf/${blueprint}/environments/${env}.tfvars" -a $@ 
 fi
