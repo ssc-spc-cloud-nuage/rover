@@ -3,31 +3,6 @@
 ###########################################################
 FROM mcr.microsoft.com/vscode/devcontainers/base:ubuntu-18.04 as base
 
-FROM base as rover_version
-
-ARG versionRover
-
-RUN echo ${versionRover} > version.txt
-
-###########################################################
-# Getting latest version of terraform-docs
-###########################################################
-FROM golang:1.15.6 as terraform-docs
-ARG versionTerraformDocs
-ENV versionTerraformDocs=${versionTerraformDocs}
-
-RUN GO111MODULE="on" go get github.com/terraform-docs/terraform-docs@${versionTerraformDocs}
-
-###########################################################
-# Getting latest version of tfsec
-###########################################################
-FROM golang:1.15.6 as tfsec
-ARG versionTfsec
-ENV versionTfsec=${versionTfsec}
-
-# to force the docker cache to invalidate when there is a new version
-RUN GO111MODULE="on" go get github.com/tfsec/tfsec/cmd/tfsec@${versionTfsec}
-
 ###########################################################
 # Getting latest version of Azure CAF Terraform provider
 ###########################################################
@@ -44,18 +19,6 @@ RUN cd /tmp && \
     go build -o terraform-provider-azurecaf
 
 ###########################################################
-# Getting latest version of yaegashi/terraform-provider-msgraph
-###########################################################
-FROM golang:1.15.6 as msgraph
-
-# to force the docker cache to invalidate when there is a new version
-ADD https://api.github.com/repos/aztfmod/terraform-provider-azurecaf/git/ref/heads/master version.json
-RUN cd /tmp && \
-    git clone https://github.com/yaegashi/terraform-provider-msgraph.git && \
-    cd terraform-provider-msgraph && \
-    go build -o terraform-provider-msgraph
-
-###########################################################
 # tools
 ###########################################################
 FROM base
@@ -69,13 +32,12 @@ ARG ENABLE_NONROOT_DOCKER="true"
 ARG INSTALL_AZURE_CLI="true"
 # Arguments set during docker-compose build -b --build from .env file
 ARG versionTerraform
-# ARG versionAzureCli
-# ARG versionKubectl
 ARG versionTflint
 ARG versionJq
-# ARG versionDockerCompose
 ARG versionTfsec
-
+ARG versionAzureCli
+# ARG versionKubectl
+# ARG versionDockerCompose
 # Install needed packages and setup non-root user. Use a separate RUN statement to add your own dependencies.
 ARG USERNAME=vscode
 ARG USER_UID=1000
@@ -85,9 +47,21 @@ ARG TARGET_SOCKET=/var/run/docker.sock
 COPY library-scripts/*.sh /tmp/library-scripts/
 
 # Install Azure CLI
-RUN apt-get update \
-    # Use azcli
-    && if [ "${INSTALL_AZURE_CLI}" = "true" ]; then bash /tmp/library-scripts/azcli-debian.sh; fi \
+#
+# Add Azure repository
+#
+RUN curl -sL https://packages.microsoft.com/keys/microsoft.asc | \
+    gpg --dearmor | \
+    tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null && \
+#
+# Add Azure CLI apt repository
+#
+    echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ bionic main"  | \
+    tee /etc/apt/sources.list.d/azure-cli.list && \
+    curl https://packages.microsoft.com/config/ubuntu/18.04/prod.list | tee /etc/apt/sources.list.d/msprod.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+    azure-cli=${versionAzureCli}-1~bionic \
     # Clean up
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts/
 
@@ -97,6 +71,13 @@ COPY library-scripts/*.sh /tmp/library-scripts/
 RUN bash /tmp/library-scripts/terraform-debian.sh "${versionTerraform}" "${versionTflint}" \
     # Clean up
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts/
+
+#
+# Install tfsec
+#
+RUN echo "Installing tfsec ${versionTfsec} ..." && \
+    curl -sSL -o /bin/tfsec https://github.com/tfsec/tfsec/releases/download/v${versionTfsec}/tfsec-linux-amd64 && \
+    chmod +x /bin/tfsec
 
 # Install kubectl
 RUN curl -sSL -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl \
@@ -126,18 +107,10 @@ COPY ./scripts/sshd_config /home/${USERNAME}/.ssh/sshd_config
 
 # Add Community terraform providers
 COPY --from=azurecaf /tmp/terraform-provider-azurecaf/terraform-provider-azurecaf /bin/
-COPY --from=msgraph /tmp/terraform-provider-msgraph/terraform-provider-msgraph /bin/
-COPY --from=tfsec /go/bin/tfsec /bin/
-COPY --from=terraform-docs /go/bin/terraform-docs /bin/
 
 WORKDIR /tf/rover
 
 COPY ./scripts-rover/* ./
-# COPY ./scripts/functions.sh .
-# COPY ./scripts/banner.sh .
-# COPY ./scripts/clone.sh .
-# COPY ./scripts/sshd.sh .
-COPY --from=rover_version version.txt /version.txt
 
 RUN echo "alias rover=/tf/rover/rover.sh" >> /home/${USERNAME}/.bashrc && \
     echo "alias rover=/tf/rover/rover.sh" >> /root/.bashrc && \
@@ -154,6 +127,10 @@ RUN echo "alias rover=/tf/rover/rover.sh" >> /home/${USERNAME}/.bashrc && \
     # chown -R ${USERNAME}:1000 /tf/rover /tf/caf /home/${USERNAME}/.ssh && \
     chown -R ${USERNAME}:1000 /tf/rover /home/${USERNAME}/.ssh && \
     chmod +x /tf/rover/sshd.sh
+
+ARG versionRover
+ENV versionRover=${versionRover}
+RUN echo ${versionRover} > /tf/rover/version.txt
 
 USER ${USERNAME}
 # WORKDIR /tf/caf
