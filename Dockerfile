@@ -113,15 +113,23 @@ WORKDIR /tf/rover
 COPY ./scripts-rover/* ./
 
 RUN echo "alias rover=/tf/rover/rover.sh" >> /home/${USERNAME}/.bashrc && \
-    echo "alias rover=/tf/rover/rover.sh" >> /root/.bashrc && \
+    #echo "alias rover=/tf/rover/rover.sh" >> /root/.bashrc && \
     echo "alias gorover=/tf/rover/gorover.sh" >> /home/${USERNAME}/.bashrc && \
-    echo "alias gorover=/tf/rover/gorover.sh" >> /root/.bashrc && \
+    #echo "alias gorover=/tf/rover/gorover.sh" >> /root/.bashrc && \
     echo "alias goterraform=/tf/rover/goterraform.sh" >> /home/${USERNAME}/.bashrc && \
-    echo "alias goterraform=/tf/rover/goterraform.sh" >> /root/.bashrc && \
+    #echo "alias goterraform=/tf/rover/goterraform.sh" >> /root/.bashrc && \
     echo "alias runactions=/tf/rover/runactions.sh" >> /home/${USERNAME}/.bashrc && \
-    echo "alias runactions=/tf/rover/runactions.sh" >> /root/.bashrc && \
+    #echo "alias runactions=/tf/rover/runactions.sh" >> /root/.bashrc && \
     echo "alias t=/usr/bin/terraform" >> /home/${USERNAME}/.bashrc && \
-    echo "alias t=/usr/bin/terraform" >> /root/.bashrc && \
+    #echo "alias t=/usr/bin/terraform" >> /root/.bashrc && \
+    #echo "function rop() { /tf/rover/gorover.sh "$1" plan; }" >> /root/.bashrc && \
+    #echo "function roa() { /tf/rover/gorover.sh "$1" apply; }" >> /root/.bashrc && \
+    #echo "function rod() { /tf/rover/gorover.sh "$1" destroy; }" >> /root/.bashrc && \
+    #echo "function roc() { /tf/rover/runactions.sh "$1"; }" >> /root/.bashrc && \
+    echo "function rop() { /tf/rover/gorover.sh \${1} plan; }" >> /home/${USERNAME}/.bashrc && \
+    echo "function roa() { /tf/rover/gorover.sh \${1} apply; }" >> /home/${USERNAME}/.bashrc && \
+    echo "function rod() { /tf/rover/gorover.sh \${1} destroy; }" >> /home/${USERNAME}/.bashrc && \
+    echo "function roc() { /tf/rover/runactions.sh \${1}; }" >> /home/${USERNAME}/.bashrc && \
     # mkdir -p /tf && \
     # mkdir -p /tf/caf && \
     # chown -R ${USERNAME}:1000 /tf/rover /tf/caf /home/${USERNAME}/.ssh && \
