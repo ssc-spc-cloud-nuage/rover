@@ -56,6 +56,7 @@ set +o allexport
 if [[ ! -z "${LAUNCHPAD_SUBSCRIPTION}" ]]; then
   echo "Setting subsctiption to ${LAUNCHPAD_SUBSCRIPTION}"
   az account set --subscription ${LAUNCHPAD_SUBSCRIPTION}
+  export ARM_SUBSCRIPTION_ID="${LAUNCHPAD_SUBSCRIPTION}"
 fi
 
 if [[ ! -f "/tf/caf/${blueprint}/environments/${env}.tfvars" ]]; then

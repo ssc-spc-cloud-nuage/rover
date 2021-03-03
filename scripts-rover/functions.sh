@@ -278,11 +278,11 @@ function destroy_from_remote_state {
 
     get_logged_user_object_id
 
-    if [ $(whoami) == "vscode" ] && [ ${TF_VAR_user_type} != "user" ] && [ ${caf_command} == "launchpad" ]; then
-        error "When connected in vscode devcontainer you must be logging the Azure AD user who did the original launchpad initialization to perform a complete cleanup."
-    else
+    #if [ $(whoami) == "vscode" ] && [ ${TF_VAR_user_type} != "user" ] && [ ${caf_command} == "launchpad" ]; then
+    #    error "When connected in vscode devcontainer you must be logging the Azure AD user who did the original launchpad initialization to perform a complete cleanup."
+    #else
         login_as_launchpad
-    fi
+    #fi
 
     export TF_VAR_tf_name=${TF_VAR_tf_name:="$(basename $(pwd)).tfstate"}
     export TF_VAR_tf_plan=${TF_VAR_tf_plan:="$(basename $(pwd)).tfplan"}
@@ -632,9 +632,9 @@ function destroy {
 
     get_logged_user_object_id
 
-    if [ $(whoami) == "vscode" ] && [ ${TF_VAR_user_type} != "user" ] && [ "${caf_command}" == "launchpad" ]; then
-        error "You must be connected with the user who did the original launchpad initialization to destroy it"
-    fi
+    #if [ $(whoami) == "vscode" ] && [ ${TF_VAR_user_type} != "user" ] && [ "${caf_command}" == "launchpad" ]; then
+    #    error "You must be connected with the user who did the original launchpad initialization to destroy it"
+    #fi
 
     rm -f "${TF_DATA_DIR}/terraform.tfstate"
     sudo rm -f ${landingzone_name}/backend.azurerm.tf
@@ -1074,4 +1074,3 @@ function get_storage_id {
         fi
     fi
 }
-
