@@ -14,7 +14,7 @@ esac
 
 set -o allexport
 
-TF_DATA_DIR=/home/vscode/.terraform.cache/${blueprint}.${env}
+TF_DATA_DIR=${HOME}/.terraform.cache/${blueprint}.${env}
 
 set +o allexport
 

@@ -45,7 +45,7 @@ else
   exit 1
 fi
 
-TF_DATA_DIR=/home/vscode/.terraform.cache/${blueprint}.${env}
+TF_DATA_DIR=${HOME}/.terraform.cache/${blueprint}.${env}
 mkdir -p ${TF_DATA_DIR}
 #if [[ ! -L cache.${env} ]] ; then
 #  ln -s ${TF_DATA_DIR} cache.${env}
