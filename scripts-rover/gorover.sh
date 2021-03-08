@@ -8,7 +8,7 @@ date=`date +%Y%m%d%H%M%S`
 
 if [[ -z ${env} || -z ${command} ]]; then
   echo 'one or more script variables are undefined'
-  echo "expecting: ./gorover.sh <environment name> <plan|apply|destroy|import|validate>"
+  echo "expecting: ./gorover.sh <environment name> <plan|apply|applyplan|destroy|import|validate>"
   echo ""
   exit 1
 fi
@@ -26,10 +26,10 @@ if [[ ${#1} -lt 3 ]]; then
 fi
 
 case "${command}" in
-  plan|apply|destroy|import|validate)
+  plan|apply|applyplan|destroy|import|validate)
     ;;
   *)
-    echo "Accepted command is one of: plan, apply, destroy, import or validate"
+    echo "Accepted command is one of: plan, apply, applyplan, destroy, import or validate"
     echo ""
     exit 1
     ;;
@@ -66,8 +66,18 @@ fi
 
 shift # Remove 1st argument from the list (environment name)
 
-if [[ ${blueprint} == "L0_blueprint_launchpad" ]]; then
-  /tf/rover/rover.sh -lz /tf/caf/${blueprint}/code -launchpad -env ${env} -tfstate "${blueprint}_${env}.tfstate" -parallelism=80 -var-file="/tf/caf/${blueprint}/environments/${env}.tfvars" -a $@ 
+# When applying a plan file directly no -var-file can be specified as the variables are already part of the plan
+# This next if take care of setting the -var-file accordingly
+if [[ ${command} == "applyplan" ]]; then
+  varfile=""
 else
-  /tf/rover/rover.sh -lz /tf/caf/${blueprint}/code -env ${env} -tfstate "${blueprint}_${env}.tfstate" -parallelism=80 -var-file="/tf/caf/${blueprint}/environments/${env}.tfvars" -a $@ 
+  varfile="-var-file=/tf/caf/${blueprint}/environments/${env}.tfvars"
+fi
+
+echo "varfile is set to: ${varfile}"
+
+if [[ ${blueprint} == "L0_blueprint_launchpad" ]]; then
+  /tf/rover/rover.sh -lz /tf/caf/${blueprint}/code -launchpad -env ${env} -tfstate "${blueprint}_${env}.tfstate" -parallelism=80 ${varfile} -a $@ 
+else
+  /tf/rover/rover.sh -lz /tf/caf/${blueprint}/code -env ${env} -tfstate "${blueprint}_${env}.tfstate" -parallelism=80 ${varfile} -a $@ 
 fi

@@ -66,7 +66,7 @@ function display_login_instructions {
 function display_instructions {
     echo ""
     echo "You can deploy a landingzone with the rover by running:"
-    echo "  rover -lz [landingzone_folder_name] -a plan|apply|validate|import|taint|state list"
+    echo "  rover -lz [landingzone_folder_name] -a plan|apply|applyplan|validate|import|taint|state list"
     echo ""
     echo "List of the landingzones loaded in the rover:"
 
@@ -491,10 +491,11 @@ function plan {
 
     rm -f $STDERR_FILE
 
-    terraform plan ${tf_command} \
-            -refresh=true \
+    terraform -chdir="$PWD" plan -refresh=true \
             -state="${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_name}" \
-            -out="${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_plan}" $PWD 2>$STDERR_FILE | tee ${tf_output_file}
+            -out="${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_plan}" \
+            ${tf_command} \
+            2>$STDERR_FILE | tee ${tf_output_file}
     
     RETURN_CODE=$? && echo "Terraform plan return code: ${RETURN_CODE}"
 
@@ -523,9 +524,12 @@ function apply {
 
     rm -f $STDERR_FILE
 
-    terraform apply ${tf_command} \
-            -state="${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_name}" \
-            $PWD 2>$STDERR_FILE | tee ${tf_output_file}
+    # echo "terraform -chdir="$PWD" apply ${tf_command} -state=\"${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_name}\" -chdir="$PWD" 2>$STDERR_FILE | tee ${tf_output_file}"
+
+    terraform -chdir="$PWD" apply \
+        -state="${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_name}" \
+        ${tf_command} \
+        2>$STDERR_FILE | tee ${tf_output_file}
 
     RETURN_CODE=$? && echo "Terraform apply return code: ${RETURN_CODE}"
 
@@ -790,6 +794,11 @@ function deploy_landingzone {
             # plan
             apply
             ;;
+        "applyplan")
+            echo "calling apply"
+            # plan
+            apply
+            ;;
         "import")
             echo "calling import"
             # plan
@@ -808,7 +817,7 @@ function deploy_landingzone {
             ;;
     esac
 
-    rm -f "${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_plan}"
+    # rm -f "${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_plan}"
     rm -f "${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_name}"
 
     cd "${current_path}"
@@ -1016,7 +1025,7 @@ function deploy {
             "destroy")
                 destroy_from_remote_state
                 ;;
-            "plan"|"apply"|"validate"|"import"|"taint"|"state list")
+            "plan"|"apply"|"applyplan"|"validate"|"import"|"taint"|"state list")
                 deploy_from_remote_state
                 ;;
             *)
@@ -1045,7 +1054,6 @@ function landing_zone {
             ;;
     esac
 }
-
 
 function get_storage_id {
     echo "@calling get_storage_id"
