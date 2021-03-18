@@ -35,6 +35,7 @@ ARG versionTerraform
 ARG versionTflint
 ARG versionJq
 ARG versionTfsec
+ARG versionTerraformDocs
 ARG versionAzureCli
 # ARG versionKubectl
 # ARG versionDockerCompose
@@ -55,6 +56,7 @@ RUN curl -sL https://packages.microsoft.com/keys/microsoft.asc | \
     tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null && \
 #
 # Add Azure CLI apt repository
+# Release: https://github.com/Azure/azure-cli/releases
 #
     echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ bionic main"  | \
     tee /etc/apt/sources.list.d/azure-cli.list && \
@@ -68,16 +70,28 @@ RUN curl -sL https://packages.microsoft.com/keys/microsoft.asc | \
 COPY library-scripts/*.sh /tmp/library-scripts/
 
 # Terraform, tflint
+# Release terraform: https://github.com/hashicorp/terraform/releases
+# Release tflint: https://github.com/terraform-linters/tflint/releases
+#
 RUN bash /tmp/library-scripts/terraform-debian.sh "${versionTerraform}" "${versionTflint}" \
     # Clean up
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts/
 
 #
 # Install tfsec
+# Release: https://github.com/tfsec/tfsec/releases
 #
 RUN echo "Installing tfsec ${versionTfsec} ..." && \
     curl -sSL -o /bin/tfsec https://github.com/tfsec/tfsec/releases/download/v${versionTfsec}/tfsec-linux-amd64 && \
     chmod +x /bin/tfsec
+
+#
+# Install terraform docs
+# Release: https://github.com/terraform-docs/terraform-docs/releases
+#
+RUN echo "Installing terraform docs ${versionTerraformDocs}..." && \
+curl -sSL -o /bin/terraform-docs https://github.com/terraform-docs/terraform-docs/releases/download/v${versionTerraformDocs}/terraform-docs-v${versionTerraformDocs}-linux-amd64 && \
+chmod +x /bin/terraform-docs
 
 # Install kubectl
 RUN curl -sSL -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl \
