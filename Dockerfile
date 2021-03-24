@@ -1,10 +1,5 @@
 ###########################################################
-# base tools and dependencies
-###########################################################
-FROM mcr.microsoft.com/vscode/devcontainers/base:ubuntu-18.04 as base
-
-###########################################################
-# Getting latest version of Azure CAF Terraform provider
+# Getting  version of Azure CAF Terraform provider
 ###########################################################
 FROM golang:1.15.6 as azurecaf
 
@@ -19,32 +14,22 @@ RUN cd /tmp && \
     go build -o terraform-provider-azurecaf
 
 ###########################################################
-# tools
+# Rover
 ###########################################################
-FROM base
-# [Option] Upgrade OS packages to their latest versions
-ARG UPGRADE_PACKAGES="false"
-# [Option] Install Docker CLI
-ARG INSTALL_DOCKER="true"
-# [Option] Enable non-root Docker access in container
-ARG ENABLE_NONROOT_DOCKER="true"
-# [Option] Install Azure CLI
-ARG INSTALL_AZURE_CLI="true"
-# Arguments set during docker-compose build -b --build from .env file
+FROM mcr.microsoft.com/vscode/devcontainers/base:ubuntu-18.04
+
 ARG versionTerraform
 ARG versionTflint
 ARG versionJq
 ARG versionTfsec
 ARG versionTerraformDocs
 ARG versionAzureCli
-# ARG versionKubectl
-# ARG versionDockerCompose
-# Install needed packages and setup non-root user. Use a separate RUN statement to add your own dependencies.
 ARG USERNAME=vscode
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 ARG SOURCE_SOCKET=/var/run/docker-host.sock
 ARG TARGET_SOCKET=/var/run/docker.sock
+
 COPY library-scripts/*.sh /tmp/library-scripts/
 
 # Install Azure CLI
@@ -117,7 +102,7 @@ ENV SSH_PASSWD=${SSH_PASSWD} \
     TF_DATA_DIR="/home/${USERNAME}/.terraform.cache" \
     TF_PLUGIN_CACHE_DIR="/home/${USERNAME}/.terraform.cache/plugin-cache"
 
-COPY ./scripts/sshd_config /home/${USERNAME}/.ssh/sshd_config
+# COPY ./scripts/sshd_config /home/${USERNAME}/.ssh/sshd_config
 
 # Add Community terraform providers
 COPY --from=azurecaf /tmp/terraform-provider-azurecaf/terraform-provider-azurecaf /bin/
@@ -130,12 +115,10 @@ RUN echo "alias rover=/tf/rover/rover.sh" >> /home/${USERNAME}/.bashrc && \
     echo "alias gorover=/tf/rover/gorover.sh" >> /home/${USERNAME}/.bashrc && \
     echo "alias goterraform=/tf/rover/goterraform.sh" >> /home/${USERNAME}/.bashrc && \
     echo "alias runactions=/tf/rover/runactions.sh" >> /home/${USERNAME}/.bashrc && \
-    echo "alias t=/usr/bin/terraform" >> /home/${USERNAME}/.bashrc && \
     echo "function rop() { /tf/rover/gorover.sh \${1} plan; }" >> /home/${USERNAME}/.bashrc && \
     echo "function roa() { /tf/rover/gorover.sh \${1} apply; }" >> /home/${USERNAME}/.bashrc && \
     echo "function rod() { /tf/rover/gorover.sh \${1} destroy; }" >> /home/${USERNAME}/.bashrc && \
-    echo "function roc() { /tf/rover/runactions.sh \${1}; }" >> /home/${USERNAME}/.bashrc && \
-    chown -R ${USERNAME}:1000 /tf/rover /home/${USERNAME}/.ssh && \
+    chown -R ${USERNAME}:1000 /tf/rover && \
     chmod +x /tf/rover/sshd.sh
 
 ARG versionRover
