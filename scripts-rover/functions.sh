@@ -385,12 +385,12 @@ function login_as_launchpad {
     echo "@calling login_as_launchpad"
 
     if [[ -f "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.keyvault" ]]; then
-        echo "importing keyvault from cache:"
+        # echo "importing keyvault from cache:"
         source "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.keyvault"
         export keyvault
     else
         export keyvault=$(az keyvault list --query "[?tags.tfstate=='${TF_VAR_level}' && tags.environment=='${TF_VAR_environment}']" -o json | jq -r .[0].name)
-        echo "exporting keyvault to cache:"
+        # echo "exporting keyvault to cache:"
         echo "keyvault=${keyvault}" > "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.keyvault"
     fi
 
@@ -399,12 +399,12 @@ function login_as_launchpad {
     echo " - keyvault_name: ${keyvault}"
 
     if [[ -f "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.SECRET_PREFIX" ]]; then
-        echo "importing SECRET_PREFIX from cache:"
+        # echo "importing SECRET_PREFIX from cache:"
         source "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.SECRET_PREFIX"
         export SECRET_PREFIX
     else
         export SECRET_PREFIX=$(az keyvault secret show -n launchpad-secret-prefix --vault-name ${keyvault} -o json | jq -r .value)
-        echo "exporting SECRET_PREFIX to cache:"
+        # echo "exporting SECRET_PREFIX to cache:"
         echo "SECRET_PREFIX=${SECRET_PREFIX}" > "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.SECRET_PREFIX"
     fi
 
@@ -425,12 +425,12 @@ function login_as_launchpad {
     export TF_VAR_lowerlevel_resource_group_name=$(echo ${stg} | jq -r .resourceGroup) && echo " - resource_group: ${TF_VAR_lowerlevel_resource_group_name}"
 
     if [[ -f "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.TF_VAR_lowerlevel_container_name" ]]; then
-        echo "importing TF_VAR_lowerlevel_container_name from cache:"
+        # echo "importing TF_VAR_lowerlevel_container_name from cache:"
         source "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.TF_VAR_lowerlevel_container_name"
         export TF_VAR_lowerlevel_container_name
     else
         export TF_VAR_lowerlevel_container_name=$(az keyvault secret show -n launchpad-blob-container --vault-name ${keyvault} -o json | jq -r .value) 
-        echo "exporting TF_VAR_lowerlevel_container_name to cache:"
+        # echo "exporting TF_VAR_lowerlevel_container_name to cache:"
         echo "TF_VAR_lowerlevel_container_name=${TF_VAR_lowerlevel_container_name}" > "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.TF_VAR_lowerlevel_container_name"
     fi
 
@@ -439,12 +439,12 @@ function login_as_launchpad {
     # export TF_VAR_lowerlevel_container_name=$(az keyvault secret show -n launchpad-blob-container --vault-name ${keyvault} -o json | jq -r .value) && echo " - container: ${TF_VAR_lowerlevel_container_name}"
 
     if [[ -f "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.TF_VAR_lowerlevel_key" ]]; then
-        echo "importing TF_VAR_lowerlevel_key from cache:"
+        # echo "importing TF_VAR_lowerlevel_key from cache:"
         source "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.TF_VAR_lowerlevel_key"
         export TF_VAR_lowerlevel_key
     else
         export TF_VAR_lowerlevel_key=$(az keyvault secret show -n launchpad-blob-name --vault-name ${keyvault} -o json | jq -r .value)
-        echo "exporting TF_VAR_lowerlevel_key to cache:"
+        # echo "exporting TF_VAR_lowerlevel_key to cache:"
         echo "TF_VAR_lowerlevel_key=${TF_VAR_lowerlevel_key}" > "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.TF_VAR_lowerlevel_key"
     fi
 
@@ -453,12 +453,12 @@ function login_as_launchpad {
     #export TF_VAR_lowerlevel_key=$(az keyvault secret show -n launchpad-blob-name --vault-name ${keyvault} -o json | jq -r .value) && echo " - tfstate file: ${TF_VAR_lowerlevel_key}"  
     
     if [[ -f "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.ARM_SUBSCRIPTION_ID" ]]; then
-        echo "importing ARM_SUBSCRIPTION_ID from cache:"
+        # echo "importing ARM_SUBSCRIPTION_ID from cache:"
         source "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.ARM_SUBSCRIPTION_ID"
         export ARM_SUBSCRIPTION_ID
     else
         export ARM_SUBSCRIPTION_ID=$(az keyvault secret show -n launchpad-subscription-id --vault-name ${keyvault} -o json | jq -r .value)
-        echo "exporting ARM_SUBSCRIPTION_ID to cache:"
+        # echo "exporting ARM_SUBSCRIPTION_ID to cache:"
         echo "ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID}" > "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.ARM_SUBSCRIPTION_ID"
     fi
 
@@ -467,12 +467,12 @@ function login_as_launchpad {
     # export ARM_SUBSCRIPTION_ID=$(az keyvault secret show -n launchpad-subscription-id --vault-name ${keyvault} -o json | jq -r .value) && echo " - subscription id: ${ARM_SUBSCRIPTION_ID}"
 
     # if [[ -f "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.launchpad_mode" ]]; then
-    #     echo "importing launchpad_mode from cache:"
+    #     # echo "importing launchpad_mode from cache:"
     #     source "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.launchpad_mode"
     #     export launchpad_mode
     # else
     #     export launchpad_mode=$(az keyvault secret show -n launchpad-mode --vault-name ${keyvault} -o json | jq -r .value) && echo " - launchpad mode: ${launchpad_mode}"
-    #     echo "exporting launchpad_mode to cache:"
+    #     # echo "exporting launchpad_mode to cache:"
     #     echo "launchpad_mode=${launchpad_mode}" > "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.launchpad_mode"
     # fi
 
@@ -788,19 +788,21 @@ function deploy_landingzone {
 
     mkdir -p "${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}"
 
-    if [[ -f "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_lowerlevel_storage_account_name}.${TF_VAR_lowerlevel_resource_group_name}.ARM_ACCESS_KEY" ]]; then
-        echo "importing ARM_ACCESS_KEY from cache:"
-        source "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_lowerlevel_storage_account_name}.${TF_VAR_lowerlevel_resource_group_name}.ARM_ACCESS_KEY"
-        export ARM_ACCESS_KEY
-    else
-        export ARM_ACCESS_KEY=$(az storage account keys list --account-name ${TF_VAR_lowerlevel_storage_account_name} --resource-group ${TF_VAR_lowerlevel_resource_group_name} -o json | jq -r .[0].value)
-        echo "exporting ARM_ACCESS_KEY to cache:"
-        echo "ARM_ACCESS_KEY=${ARM_ACCESS_KEY}" > "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_lowerlevel_storage_account_name}.${TF_VAR_lowerlevel_resource_group_name}.ARM_ACCESS_KEY"
-    fi
+    # 
+    # Not exporting ARM_ACCESS_KEY as it is sensitive. In theory this should not be an issue as whoever can run this script
+    # can already get access to it via the command used to obtain it... but just in case I will leave the code to do it commented out for now below.
+    #
+    # if [[ -f "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_lowerlevel_storage_account_name}.${TF_VAR_lowerlevel_resource_group_name}.ARM_ACCESS_KEY" ]]; then
+    #     # echo "importing ARM_ACCESS_KEY from cache:"
+    #     source "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_lowerlevel_storage_account_name}.${TF_VAR_lowerlevel_resource_group_name}.ARM_ACCESS_KEY"
+    #     export ARM_ACCESS_KEY
+    # else
+    #     export ARM_ACCESS_KEY=$(az storage account keys list --account-name ${TF_VAR_lowerlevel_storage_account_name} --resource-group ${TF_VAR_lowerlevel_resource_group_name} -o json | jq -r .[0].value)
+    #     # echo "exporting ARM_ACCESS_KEY to cache:"
+    #     echo "ARM_ACCESS_KEY=${ARM_ACCESS_KEY}" > "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_lowerlevel_storage_account_name}.${TF_VAR_lowerlevel_resource_group_name}.ARM_ACCESS_KEY"
+    # fi
 
-    # echo " - ARM ACCESS KEY: ${ARM_ACCESS_KEY}"
-
-    # export ARM_ACCESS_KEY=$(az storage account keys list --account-name ${TF_VAR_lowerlevel_storage_account_name} --resource-group ${TF_VAR_lowerlevel_resource_group_name} -o json | jq -r .[0].value)
+    export ARM_ACCESS_KEY=$(az storage account keys list --account-name ${TF_VAR_lowerlevel_storage_account_name} --resource-group ${TF_VAR_lowerlevel_resource_group_name} -o json | jq -r .[0].value)
 
     terraform init \
         -reconfigure \
@@ -1083,13 +1085,13 @@ function get_storage_id {
     echo "@calling get_storage_id"
 
     if [[ -f "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.id" ]]; then
-        echo "importing id from cache:"
+        # echo "importing id from cache:"
         source "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.id"
         export id
     else
         export id=$(az storage account list --query "[?tags.tfstate=='${TF_VAR_level}' && tags.environment=='${TF_VAR_environment}'].{id:id}" -o json | jq -r .[0].id)
         if [ ${id} != null ]; then
-            echo "exporting id to cache:"
+            # echo "exporting id to cache:"
             echo "id=${id}" > "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.id"
         fi
     fi
