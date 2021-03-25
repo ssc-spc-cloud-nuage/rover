@@ -66,7 +66,7 @@ function display_login_instructions {
 function display_instructions {
     echo ""
     echo "You can deploy a landingzone with the rover by running:"
-    echo "  rover -lz [landingzone_folder_name] -a plan|apply|applyplan|validate|import|taint|state list"
+    echo "  rover -lz [landingzone_folder_name] -a plan|apply|validate|import|taint|state list"
     echo ""
     echo "List of the landingzones loaded in the rover:"
 
@@ -253,7 +253,7 @@ function initialize_state {
 function deploy_from_remote_state {
     echo "@calling deploy_from_remote_state"
 
-    echo 'Connecting to the launchpad'
+    echo ' - Connecting to the launchpad'
     cd ${landingzone_name}
 
     if [ -f "backend.azurerm" ]; then
@@ -384,97 +384,119 @@ function list_deployed_landingzones {
 function login_as_launchpad {
     echo "@calling login_as_launchpad"
 
-    export keyvault=$(az keyvault list --query "[?tags.tfstate=='${TF_VAR_level}' && tags.environment=='${TF_VAR_environment}']" -o json | jq -r .[0].name)
-    
-    if [ "${keyvault}" == "null" ]; then
-        export keyvault=$(az keyvault list --query "[?tags.tfstate=='level0' && tags.workspace=='level0']" -o json | jq -r .[0].name)
-        login_as_launchpad_1510
+    if [[ -f "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.keyvault" ]]; then
+        echo "importing keyvault from cache:"
+        source "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.keyvault"
+        export keyvault
     else
-
-        echo " - keyvault_name: ${keyvault}"
-
-        export SECRET_PREFIX=$(az keyvault secret show -n launchpad-secret-prefix --vault-name ${keyvault} -o json | jq -r .value) && echo " - Name: ${SECRET_PREFIX}"
-            
-        # If the logged in user does not have access to the launchpad
-        if [ "${SECRET_PREFIX}" == "" ]; then
-            error 326 "Not authorized to manage landingzones. User must be member of the security group to access the launchpad and deploy a landing zone" 102
-        fi
-
-        
-        stg=$(az storage account show --ids ${id} -o json)
-
-        echo ""
-        echo "Getting launchpad coordinates:"
-        export TF_VAR_lowerlevel_storage_account_name=$(echo ${stg} | jq -r .name) && echo " - storage_account_name: ${TF_VAR_lowerlevel_storage_account_name}"
-        export TF_VAR_lowerlevel_resource_group_name=$(echo ${stg} | jq -r .resourceGroup) && echo " - resource_group: ${TF_VAR_lowerlevel_resource_group_name}"
-        export TF_VAR_lowerlevel_container_name=$(az keyvault secret show -n launchpad-blob-container --vault-name ${keyvault} -o json | jq -r .value) && echo " - container: ${TF_VAR_lowerlevel_container_name}"
-        export TF_VAR_lowerlevel_key=$(az keyvault secret show -n launchpad-blob-name --vault-name ${keyvault} -o json | jq -r .value) && echo " - tfstate file: ${TF_VAR_lowerlevel_key}"  
-        export ARM_SUBSCRIPTION_ID=$(az keyvault secret show -n launchpad-subscription-id --vault-name ${keyvault} -o json | jq -r .value) && echo " - subscription id: ${ARM_SUBSCRIPTION_ID}"
-        launchpad_mode=$(az keyvault secret show -n launchpad-mode --vault-name ${keyvault} -o json | jq -r .value) && echo " - launchpad mode: ${launchpad_mode}"  
-
-        # if [ ${caf_command} == "launchpad" ]; then
-        #     echo "Set terraform provider context to Azure AD application launchpad "
-        #     export ARM_CLIENT_ID=$(az keyvault secret show -n ${SECRET_PREFIX}-client-id --vault-name ${keyvault} -o json | jq -r .value) && echo " - client id: ${ARM_CLIENT_ID}"
-        #     export ARM_CLIENT_SECRET=$(az keyvault secret show -n ${SECRET_PREFIX}-client-secret --vault-name ${keyvault} -o json | jq -r .value)
-        #     export ARM_TENANT_ID=$(az keyvault secret show -n ${SECRET_PREFIX}-tenant-id --vault-name ${keyvault} -o json | jq -r .value) && echo " - tenant id: ${ARM_TENANT_ID}"
-        # fi 
-
-        if [ ${caf_command} == "landingzone" ] && [ ${launchpad_mode} == "launchpad" ]; then
-            
-             echo "Set terraform provider context to Azure AD application launchpad "
-            export ARM_CLIENT_ID=$(az keyvault secret show -n ${SECRET_PREFIX}-client-id --vault-name ${keyvault} -o json | jq -r .value) && echo " - client id: ${ARM_CLIENT_ID}"
-            export ARM_CLIENT_SECRET=$(az keyvault secret show -n ${SECRET_PREFIX}-client-secret --vault-name ${keyvault} -o json | jq -r .value)
-            export ARM_TENANT_ID=$(az keyvault secret show -n ${SECRET_PREFIX}-tenant-id --vault-name ${keyvault} -o json | jq -r .value) && echo " - tenant id: ${ARM_TENANT_ID}"
-            
-            if [ ${TF_VAR_lowerlevel_key} == ${TF_VAR_tf_name} ] && [ ${tf_action} == "destroy" ]; then
-                error "You must run the rover in launchpad mode to destroy the launchpad"
-            fi
-            
-            echo "Impersonating with the azure session with the launchpad service principal to deploy the landingzone"
-            
-            az login --service-principal -u ${ARM_CLIENT_ID} -p ${ARM_CLIENT_SECRET} --tenant ${ARM_TENANT_ID} 
-        fi
-
-        az account set -s ${ARM_SUBSCRIPTION_ID}
-
+        export keyvault=$(az keyvault list --query "[?tags.tfstate=='${TF_VAR_level}' && tags.environment=='${TF_VAR_environment}']" -o json | jq -r .[0].name)
+        echo "exporting keyvault to cache:"
+        echo "keyvault=${keyvault}" > "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.keyvault"
     fi
-}
 
-function login_as_launchpad_1510 {
-    echo "@calling login_as_launchpad_1510"
-
-    export keyvault=$(az keyvault list --query "[?tags.tfstate=='level0' && tags.workspace=='level0']" -o json | jq -r .[0].name) && echo " - keyvault_name: ${keyvault}"
+    # export keyvault=$(az keyvault list --query "[?tags.tfstate=='${TF_VAR_level}' && tags.environment=='${TF_VAR_environment}']" -o json | jq -r .[0].name)
     
-    export LAUNCHPAD_NAME=$(az keyvault secret show -n launchpad-name --vault-name ${keyvault} -o json | jq -r .value) && echo " - Name: ${LAUNCHPAD_NAME}"
-        
+    echo " - keyvault_name: ${keyvault}"
+
+    if [[ -f "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.SECRET_PREFIX" ]]; then
+        echo "importing SECRET_PREFIX from cache:"
+        source "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.SECRET_PREFIX"
+        export SECRET_PREFIX
+    else
+        export SECRET_PREFIX=$(az keyvault secret show -n launchpad-secret-prefix --vault-name ${keyvault} -o json | jq -r .value)
+        echo "exporting SECRET_PREFIX to cache:"
+        echo "SECRET_PREFIX=${SECRET_PREFIX}" > "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.SECRET_PREFIX"
+    fi
+
+    # export SECRET_PREFIX=$(az keyvault secret show -n launchpad-secret-prefix --vault-name ${keyvault} -o json | jq -r .value) && echo " - Name: ${SECRET_PREFIX}"
+    
+    echo " - Name: ${SECRET_PREFIX}"
+
     # If the logged in user does not have access to the launchpad
-    if [ "${LAUNCHPAD_NAME}" == "" ]; then
+    if [ "${SECRET_PREFIX}" == "" ]; then
         error 326 "Not authorized to manage landingzones. User must be member of the security group to access the launchpad and deploy a landing zone" 102
     fi
 
     stg=$(az storage account show --ids ${id} -o json)
-    export TF_VAR_rover_pilot_client_id=$(az keyvault secret show -n launchpad-service-principal-client-id --vault-name ${keyvault} -o json | jq -r .value) && echo " - rover client id: ${TF_VAR_rover_pilot_client_id}"
-    export TF_VAR_lowerlevel_key=$(az keyvault secret show -n launchpad-blob-name --vault-name ${keyvault} -o json | jq -r .value) && echo " - tfstate file: ${TF_VAR_lowerlevel_key}"  
+
+    echo ""
+    echo "Getting launchpad coordinates:"
     export TF_VAR_lowerlevel_storage_account_name=$(echo ${stg} | jq -r .name) && echo " - storage_account_name: ${TF_VAR_lowerlevel_storage_account_name}"
     export TF_VAR_lowerlevel_resource_group_name=$(echo ${stg} | jq -r .resourceGroup) && echo " - resource_group: ${TF_VAR_lowerlevel_resource_group_name}"
-    export TF_VAR_lowerlevel_container_name=$(az keyvault secret show -n launchpad-blob-container --vault-name ${keyvault} -o json | jq -r .value) && echo " - container: ${TF_VAR_lowerlevel_container_name}"
-    
-    export ARM_SUBSCRIPTION_ID=$(az keyvault secret show -n launchpad-subscription-id --vault-name ${keyvault} -o json | jq -r .value) && echo " - subscription id: ${ARM_SUBSCRIPTION_ID}"
 
-    if [ ${caf_command} == "landingzone" ] && [ "${launchpad_mode}" == "launchpad_opensource" ]; then
-
-        echo ""
-        echo "Impersonating with the launchpad service principal to deploy the landingzone"
-        
-        export ARM_CLIENT_ID=$(az keyvault secret show -n launchpad-application-id --vault-name ${keyvault} -o json | jq -r .value) && echo " - client id: ${ARM_CLIENT_ID}"
-        export ARM_CLIENT_SECRET=$(az keyvault secret show -n launchpad-service-principal-client-secret --vault-name ${keyvault} -o json | jq -r .value)
-        export ARM_TENANT_ID=$(az keyvault secret show -n launchpad-tenant-id --vault-name ${keyvault} -o json | jq -r .value) && echo " - tenant id: ${ARM_TENANT_ID}"
-        
-
-        az login --service-principal -u ${ARM_CLIENT_ID} -p ${ARM_CLIENT_SECRET} --tenant ${ARM_TENANT_ID} 
-        az account set -s ${ARM_SUBSCRIPTION_ID}
-
+    if [[ -f "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.TF_VAR_lowerlevel_container_name" ]]; then
+        echo "importing TF_VAR_lowerlevel_container_name from cache:"
+        source "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.TF_VAR_lowerlevel_container_name"
+        export TF_VAR_lowerlevel_container_name
+    else
+        export TF_VAR_lowerlevel_container_name=$(az keyvault secret show -n launchpad-blob-container --vault-name ${keyvault} -o json | jq -r .value) 
+        echo "exporting TF_VAR_lowerlevel_container_name to cache:"
+        echo "TF_VAR_lowerlevel_container_name=${TF_VAR_lowerlevel_container_name}" > "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.TF_VAR_lowerlevel_container_name"
     fi
+
+    echo " - container: ${TF_VAR_lowerlevel_container_name}"
+
+    # export TF_VAR_lowerlevel_container_name=$(az keyvault secret show -n launchpad-blob-container --vault-name ${keyvault} -o json | jq -r .value) && echo " - container: ${TF_VAR_lowerlevel_container_name}"
+
+    if [[ -f "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.TF_VAR_lowerlevel_key" ]]; then
+        echo "importing TF_VAR_lowerlevel_key from cache:"
+        source "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.TF_VAR_lowerlevel_key"
+        export TF_VAR_lowerlevel_key
+    else
+        export TF_VAR_lowerlevel_key=$(az keyvault secret show -n launchpad-blob-name --vault-name ${keyvault} -o json | jq -r .value)
+        echo "exporting TF_VAR_lowerlevel_key to cache:"
+        echo "TF_VAR_lowerlevel_key=${TF_VAR_lowerlevel_key}" > "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.TF_VAR_lowerlevel_key"
+    fi
+
+    echo " - tfstate file: ${TF_VAR_lowerlevel_key}"
+    
+    #export TF_VAR_lowerlevel_key=$(az keyvault secret show -n launchpad-blob-name --vault-name ${keyvault} -o json | jq -r .value) && echo " - tfstate file: ${TF_VAR_lowerlevel_key}"  
+    
+    if [[ -f "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.ARM_SUBSCRIPTION_ID" ]]; then
+        echo "importing ARM_SUBSCRIPTION_ID from cache:"
+        source "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.ARM_SUBSCRIPTION_ID"
+        export ARM_SUBSCRIPTION_ID
+    else
+        export ARM_SUBSCRIPTION_ID=$(az keyvault secret show -n launchpad-subscription-id --vault-name ${keyvault} -o json | jq -r .value)
+        echo "exporting ARM_SUBSCRIPTION_ID to cache:"
+        echo "ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID}" > "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.ARM_SUBSCRIPTION_ID"
+    fi
+
+    echo " - subscription id: ${ARM_SUBSCRIPTION_ID}"
+    
+    # export ARM_SUBSCRIPTION_ID=$(az keyvault secret show -n launchpad-subscription-id --vault-name ${keyvault} -o json | jq -r .value) && echo " - subscription id: ${ARM_SUBSCRIPTION_ID}"
+
+    # if [[ -f "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.launchpad_mode" ]]; then
+    #     echo "importing launchpad_mode from cache:"
+    #     source "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.launchpad_mode"
+    #     export launchpad_mode
+    # else
+    #     export launchpad_mode=$(az keyvault secret show -n launchpad-mode --vault-name ${keyvault} -o json | jq -r .value) && echo " - launchpad mode: ${launchpad_mode}"
+    #     echo "exporting launchpad_mode to cache:"
+    #     echo "launchpad_mode=${launchpad_mode}" > "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.launchpad_mode"
+    # fi
+
+    # echo " - launchpad mode: ${launchpad_mode}"
+
+    # launchpad_mode=$(az keyvault secret show -n launchpad-mode --vault-name ${keyvault} -o json | jq -r .value) && echo " - launchpad mode: ${launchpad_mode}"
+
+    # if [ ${caf_command} == "landingzone" ] && [ ${launchpad_mode} == "launchpad" ]; then
+        
+    #     echo "Set terraform provider context to Azure AD application launchpad "
+    #     export ARM_CLIENT_ID=$(az keyvault secret show -n ${SECRET_PREFIX}-client-id --vault-name ${keyvault} -o json | jq -r .value) && echo " - client id: ${ARM_CLIENT_ID}"
+    #     export ARM_CLIENT_SECRET=$(az keyvault secret show -n ${SECRET_PREFIX}-client-secret --vault-name ${keyvault} -o json | jq -r .value)
+    #     export ARM_TENANT_ID=$(az keyvault secret show -n ${SECRET_PREFIX}-tenant-id --vault-name ${keyvault} -o json | jq -r .value) && echo " - tenant id: ${ARM_TENANT_ID}"
+        
+    #     if [ ${TF_VAR_lowerlevel_key} == ${TF_VAR_tf_name} ] && [ ${tf_action} == "destroy" ]; then
+    #         error "You must run the rover in launchpad mode to destroy the launchpad"
+    #     fi
+        
+    #     echo "Impersonating with the azure session with the launchpad service principal to deploy the landingzone"
+        
+    #     az login --service-principal -u ${ARM_CLIENT_ID} -p ${ARM_CLIENT_SECRET} --tenant ${ARM_TENANT_ID} 
+    # fi
+
+    az account set -s ${ARM_SUBSCRIPTION_ID}
 }
 
 function plan {
@@ -491,11 +513,10 @@ function plan {
 
     rm -f $STDERR_FILE
 
-    terraform -chdir="$PWD" plan -refresh=true \
+    terraform plan ${tf_command} \
+            -refresh=true \
             -state="${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_name}" \
-            -out="${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_plan}" \
-            ${tf_command} \
-            2>$STDERR_FILE | tee ${tf_output_file}
+            -out="${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_plan}" $PWD 2>$STDERR_FILE | tee ${tf_output_file}
     
     RETURN_CODE=$? && echo "Terraform plan return code: ${RETURN_CODE}"
 
@@ -524,12 +545,9 @@ function apply {
 
     rm -f $STDERR_FILE
 
-    # echo "terraform -chdir="$PWD" apply ${tf_command} -state=\"${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_name}\" -chdir="$PWD" 2>$STDERR_FILE | tee ${tf_output_file}"
-
-    terraform -chdir="$PWD" apply \
-        -state="${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_name}" \
-        ${tf_command} \
-        2>$STDERR_FILE | tee ${tf_output_file}
+    terraform apply ${tf_command} \
+            -state="${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_name}" \
+            $PWD 2>$STDERR_FILE | tee ${tf_output_file}
 
     RETURN_CODE=$? && echo "Terraform apply return code: ${RETURN_CODE}"
 
@@ -770,13 +788,24 @@ function deploy_landingzone {
 
     mkdir -p "${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}"
 
-    export ARM_ACCESS_KEY=$(az storage account keys list --account-name ${TF_VAR_lowerlevel_storage_account_name} --resource-group ${TF_VAR_lowerlevel_resource_group_name} -o json | jq -r .[0].value)
+    if [[ -f "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_lowerlevel_storage_account_name}.${TF_VAR_lowerlevel_resource_group_name}.ARM_ACCESS_KEY" ]]; then
+        echo "importing ARM_ACCESS_KEY from cache:"
+        source "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_lowerlevel_storage_account_name}.${TF_VAR_lowerlevel_resource_group_name}.ARM_ACCESS_KEY"
+        export ARM_ACCESS_KEY
+    else
+        export ARM_ACCESS_KEY=$(az storage account keys list --account-name ${TF_VAR_lowerlevel_storage_account_name} --resource-group ${TF_VAR_lowerlevel_resource_group_name} -o json | jq -r .[0].value)
+        echo "exporting ARM_ACCESS_KEY to cache:"
+        echo "ARM_ACCESS_KEY=${ARM_ACCESS_KEY}" > "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_lowerlevel_storage_account_name}.${TF_VAR_lowerlevel_resource_group_name}.ARM_ACCESS_KEY"
+    fi
+
+    # echo " - ARM ACCESS KEY: ${ARM_ACCESS_KEY}"
+
+    # export ARM_ACCESS_KEY=$(az storage account keys list --account-name ${TF_VAR_lowerlevel_storage_account_name} --resource-group ${TF_VAR_lowerlevel_resource_group_name} -o json | jq -r .[0].value)
 
     terraform init \
         -reconfigure \
         -backend=true \
-        -get-plugins=true \
-        -upgrade=true \
+        -upgrade=false \
         -backend-config storage_account_name=${TF_VAR_lowerlevel_storage_account_name} \
         -backend-config container_name=${TF_VAR_workspace} \
         -backend-config access_key=${ARM_ACCESS_KEY} \
@@ -790,11 +819,6 @@ function deploy_landingzone {
             plan
             ;;
         "apply")
-            echo "calling apply"
-            # plan
-            apply
-            ;;
-        "applyplan")
             echo "calling apply"
             # plan
             apply
@@ -817,7 +841,7 @@ function deploy_landingzone {
             ;;
     esac
 
-    # rm -f "${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_plan}"
+    rm -f "${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_plan}"
     rm -f "${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_name}"
 
     cd "${current_path}"
@@ -968,7 +992,7 @@ function get_logged_user_object_id {
 }
 
 function deploy {
-
+    # echo "@calling deploy"
     get_storage_id
 
     case "${id}" in 
@@ -1004,10 +1028,10 @@ function deploy {
         *)
         
         # Get the launchpad version
-        caf_launchpad=$(az storage account show --ids $id -o json | jq -r .tags.launchpad)
-        echo ""
-        echo "${caf_launchpad} already installed"
-        echo ""
+        #caf_launchpad=$(az storage account show --ids $id -o json | jq -r .tags.launchpad)
+        #echo ""
+        #echo "${caf_launchpad} already installed"
+        #echo ""
 
         if [ -e "${TF_DATA_DIR}/tfstates/${TF_VAR_workspace}/${TF_VAR_tf_name}" ]; then
             echo "Recover from an un-finished previous execution"
@@ -1025,7 +1049,7 @@ function deploy {
             "destroy")
                 destroy_from_remote_state
                 ;;
-            "plan"|"apply"|"applyplan"|"validate"|"import"|"taint"|"state list")
+            "plan"|"apply"|"validate"|"import"|"taint"|"state list")
                 deploy_from_remote_state
                 ;;
             *)
@@ -1057,28 +1081,41 @@ function landing_zone {
 
 function get_storage_id {
     echo "@calling get_storage_id"
-    #1510 launchpad version
-    id=$(az storage account list --query "[?tags.tfstate=='level0' && tags.workspace=='level0']" -o json | jq -r .[0].id)
-    if [ ${id} == null ]; then
-        id=$(az storage account list --query "[?tags.tfstate=='${TF_VAR_level}' && tags.environment=='${TF_VAR_environment}'].{id:id}" -o json | jq -r .[0].id)
-        if [ ${id} == null ] && [ "${caf_command}" != "launchpad" ]; then
-            # Check if other launchpad are installed
-            id=$(az storage account list --query "[?tags.tfstate=='${TF_VAR_level}'].{id:id}" -o json | jq -r .[0].id)
 
-            if [ ${id} == null ]; then
-                if [ ${TF_VAR_level} != "level0" ]; then
-                    echo "Multi-level support is not yet support. Coming soon."
-                else
-                    display_launchpad_instructions
-                fi
-                exit 1000
+    if [[ -f "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.id" ]]; then
+        echo "importing id from cache:"
+        source "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.id"
+        export id
+    else
+        export id=$(az storage account list --query "[?tags.tfstate=='${TF_VAR_level}' && tags.environment=='${TF_VAR_environment}'].{id:id}" -o json | jq -r .[0].id)
+        if [ ${id} != null ]; then
+            echo "exporting id to cache:"
+            echo "id=${id}" > "${HOME}/.terraform.cache/${LAUNCHPAD_SUBSCRIPTION}.${TF_VAR_level}.${TF_VAR_environment}.id"
+        fi
+    fi
+
+    # export keyvault=$(az keyvault list --query "[?tags.tfstate=='${TF_VAR_level}' && tags.environment=='${TF_VAR_environment}']" -o json | jq -r .[0].name)
+    
+    echo " - id_name: ${id}"
+
+    # id=$(az storage account list --query "[?tags.tfstate=='${TF_VAR_level}' && tags.environment=='${TF_VAR_environment}'].{id:id}" -o json | jq -r .[0].id)
+    if [ ${id} == null ] && [ "${caf_command}" != "launchpad" ]; then
+        # Check if other launchpad are installed
+        id=$(az storage account list --query "[?tags.tfstate=='${TF_VAR_level}'].{id:id}" -o json | jq -r .[0].id)
+
+        if [ ${id} == null ]; then
+            if [ ${TF_VAR_level} != "level0" ]; then
+                echo "Multi-level support is not yet support. Coming soon."
             else
-                echo "There is no launchpad in the environment: ${TF_VAR_environment}"
-                echo "List of the other launchpad deployed"
-                az storage account list --query "[?tags.tfstate=='${TF_VAR_level}'].{name:name,environment:tags.environment, launchpad:tags.launchpad}" -o table
-                
-                exit 0
+                display_launchpad_instructions
             fi
+            exit 1000
+        else
+            echo "There is no launchpad in the environment: ${TF_VAR_environment}"
+            echo "List of the other launchpad deployed"
+            az storage account list --query "[?tags.tfstate=='${TF_VAR_level}'].{name:name,environment:tags.environment, launchpad:tags.launchpad}" -o table
+            
+            exit 0
         fi
     fi
 }
