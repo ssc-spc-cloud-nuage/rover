@@ -66,7 +66,7 @@ function display_login_instructions {
 function display_instructions {
     echo ""
     echo "You can deploy a landingzone with the rover by running:"
-    echo "  rover -lz [landingzone_folder_name] -a plan|apply|validate|import|taint|state list"
+    echo "  rover -lz [landingzone_folder_name] -a plan|apply|applyplan|validate|import|taint|state list"
     echo ""
     echo "List of the landingzones loaded in the rover:"
 
@@ -1051,7 +1051,7 @@ function deploy {
             "destroy")
                 destroy_from_remote_state
                 ;;
-            "plan"|"apply"|"validate"|"import"|"taint"|"state list")
+            "plan"|"apply"|"applyplan"|"validate"|"import"|"taint"|"state list")
                 deploy_from_remote_state
                 ;;
             *)
