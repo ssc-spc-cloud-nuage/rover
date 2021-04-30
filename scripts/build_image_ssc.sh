@@ -26,8 +26,8 @@ docker-compose build --build-arg versionRover=${rover}
 
 case "$1" in 
     "github")
-        docker tag workspace_rover ${rover}
-        docker tag workspace_rover sscspccloudnuage/rover:latest
+        docker tag rover_rover ${rover}
+        docker tag rover_rover sscspccloudnuage/rover:latest
 
         docker push sscspccloudnuage/rover:${tag}
         docker push sscspccloudnuage/rover:latest
@@ -36,8 +36,8 @@ case "$1" in
         echo "Version sscspccloudnuage/rover:latest created."
         ;;
     "dev")
-        docker tag workspace_rover sscspccloudnuage/roverdev:${tag}
-        docker tag workspace_rover sscspccloudnuage/roverdev:latest
+        docker tag rover_rover sscspccloudnuage/roverdev:${tag}
+        docker tag rover_rover sscspccloudnuage/roverdev:latest
 
         docker push sscspccloudnuage/roverdev:${tag}
         docker push sscspccloudnuage/roverdev:latest
@@ -45,8 +45,8 @@ case "$1" in
         echo "Version sscspccloudnuage/roverdev:latest created."
         ;;
     *)    
-        docker tag workspace_rover sscspccloudnuage/roverdev:${tag}
-        docker tag workspace_rover sscspccloudnuage/roverdev:latest
+        docker tag rover_rover sscspccloudnuage/roverdev:${tag}
+        docker tag rover_rover sscspccloudnuage/roverdev:latest
         echo "Local version created"
         echo "Version sscspccloudnuage/roverdev:${tag} created."
         echo "Version sscspccloudnuage/roverdev:latest created."
